@@ -18,7 +18,8 @@ import random
 import time
 from functools import wraps
 
-np.set_printoptions(edgeitems=5,linewidth=75,precision=2,suppress=True,threshold=5)
+np.set_printoptions(edgeitems=5, linewidth=75, precision=2, suppress=True, threshold=5)
+
 
 # .... wrapper funcs .............
 def profile_func(func):
@@ -29,10 +30,11 @@ def profile_func(func):
     import cProfile
     import pstats
     name = func
-    stat_name = 'temp.txt' #func + ".txt"
+    stat_name = 'temp.txt'  # func + ".txt"
     cProfile.run(name,stat_name) 
     stats = pstats.Stats(stat_name)
     stats.strip_dirs().sort_stats('time').print_stats()  # time, tottime, cumtime
+
         
 def timing(func):
     """timing decorator function"""
@@ -49,6 +51,7 @@ def timing(func):
         #return dt                      # return delta time
     return wrapper
 
+
 def arg_deco(func):
     """This wrapper just prints some basic function information."""
     @wraps(func)
@@ -58,39 +61,42 @@ def arg_deco(func):
         print("  args.... {}\n  kwargs. {}".format(args,kwargs))
         return func(*args, **kwargs)
     return wrapper
-    
+
+   
 # .... main funcs ................
 @timing
 @arg_deco
-def make_pnts(x_min=0,x_max=1000,y_min=0,y_max=1000,num=1000):
+def make_pnts(x_min=0, x_max=1000, y_min=0, y_max=1000, num=1000):
     """Make (num) integer points between (low) and (high)."""
-    dt = np.dtype([('ID','<i4'),('Shape',('<f8',(2,)))]) 
-    IDs = np.arange(0,num)
-    Xs = np.random.random_integers(x_min,x_max,size=(num,1))
-    Ys = np.random.random_integers(y_min,y_max,size=(num,1))
-    arr = np.array(list(zip(IDs,zip(Xs,Ys))),dt)
+    dt = np.dtype([('ID', '<i4'), ('Shape', ('<f8', (2,)))]) 
+    IDs = np.arange(0, num)
+    Xs = np.random.random_integers(x_min, x_max, size=(num, 1))
+    Ys = np.random.random_integers(y_min, y_max, size=(num, 1))
+    arr = np.array(list(zip(IDs,zip(Xs, Ys))), dt)
     return arr
+
 
 @timing
 @arg_deco
-def pnts_zeros(x_min=0,x_max=1000,y_min=0,y_max=1000,num=1000):
-    """Produce ID,(X,Y) array using the zeros method"""
-    Xs = np.random.random_integers(x_min,x_max,size=(num))#,1))
-    Ys = np.random.random_integers(y_min,y_max,size=(num))#,1))
+def pnts_zeros(x_min=0, x_max=1000, y_min=0, y_max=1000, num=1000):
+    """Produce ID, (X, Y) array using the zeros method"""
+    Xs = np.random.random_integers(x_min, x_max, size=(num))  # ,1))
+    Ys = np.random.random_integers(y_min,y_max,size=(num))    # ,1))
     IDs = np.arange(num)
-    dt_3 = np.dtype([('ID','<i4'),('Shape',('<f8',(2,)))])
+    dt_3 = np.dtype([('ID', '<i4'), ('Shape',('<f8', (2,)))])
     zer = np.zeros(num,dt_3)
     zer['ID'] = IDs
     zer['Shape'][:,0] = Xs
     zer['Shape'][:,1] = Ys
     return zer
 
+
 @timing
 @arg_deco
-def einsum_0(orig,dest):
+def einsum_0(orig, dest):
     """einsum examples, see main script"""   
     diff = orig[:,None,:] - dest
-    dist = np.sqrt(np.einsum('ijk,ijk->ij',diff,diff))
+    dist = np.sqrt(np.einsum('ijk, ijk->ij', diff, diff))
     print("\n(2) solution\n{}".format(dist))
     return dist
 
