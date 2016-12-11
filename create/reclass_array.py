@@ -1,6 +1,6 @@
 # coding: utf-8
 """
-Script:  reclass_array_demo.py
+Script:  reclass_array.py
 Author:  Dan.Patterson@carleton.ca
 Modified: 2016-03-11
 Purpose: To demonstrate how to perform basic array reclassification 
