@@ -1,6 +1,6 @@
 # -*- coding: UTF-8 -*-
 """
-Script:   random_data_demo.py
+Script:   random_data.py
 Path:     your path
 Author:   Dan.Patterson@carleton.ca
 Modified: 2016-05-01
