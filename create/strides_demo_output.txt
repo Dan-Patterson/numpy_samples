@@ -1,0 +1,38 @@
+
+:------------------------------------------------------------------
+:Sliding windows... based on as_strided...
+:input array
+    [0 4 0 4 1 0 4 0 1 2]
+:
+:array interface dictionary items...
+    ('descr', [('', '<i8')])
+    ('data', (6180838752, False))
+    ('shape', (10,))
+    ('typestr', '<i8')
+    ('strides', None)
+    ('version', 3)
+:
+:Sample calculation using window of 3
+:result...
+    [4 8 5 5 5 4 5 3]
+:
+:strided array
+    [[0 4 0]
+     [4 0 4]
+     [0 4 1]
+     [4 1 0]
+     [1 0 4]
+     [0 4 0]
+     [4 0 1]
+     [0 1 2]]
+:
+:output array interface dictionary items
+    ('descr', [('', '<i8')])
+    ('data', (6180838752, False))
+    ('shape', (8, 3))
+    ('typestr', '<i8')
+    ('strides', (8, 8))
+    ('version', 3)
+:
+:------------------------------------------------------------------
+
