@@ -1,34 +1,34 @@
 
 :------------------------------------------------------------------
 :Sliding windows... based on as_strided...
-:input array
-    [0 4 0 4 1 0 4 0 1 2]
+:input array 'a'
+    [1 1 3 0 4 3 0 2 4 0]
 :
-:array interface dictionary items...
+:array interface dictionary items (a_txt)...
     ('descr', [('', '<i8')])
-    ('data', (6180838752, False))
+    ('data', (6180911952, False))
     ('shape', (10,))
     ('typestr', '<i8')
     ('strides', None)
     ('version', 3)
 :
-:Sample calculation using window of 3
+:Sample ''sum' calculation using window of 3
 :result...
-    [4 8 5 5 5 4 5 3]
+    [5 4 7 7 7 5 6 6]
 :
-:strided array
-    [[0 4 0]
-     [4 0 4]
-     [0 4 1]
-     [4 1 0]
-     [1 0 4]
-     [0 4 0]
-     [4 0 1]
-     [0 1 2]]
+:strided array (a2D)
+    [[1 1 3]
+     [1 3 0]
+     [3 0 4]
+     [0 4 3]
+     [4 3 0]
+     [3 0 2]
+     [0 2 4]
+     [2 4 0]]
 :
 :output array interface dictionary items
     ('descr', [('', '<i8')])
-    ('data', (6180838752, False))
+    ('data', (6180911952, False))
     ('shape', (8, 3))
     ('typestr', '<i8')
     ('strides', (8, 8))
