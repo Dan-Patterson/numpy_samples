@@ -88,7 +88,7 @@
 import sys
 import numpy as np
 from textwrap import dedent
-from timing import timing
+#from timing import timing
 #
 #---- setup and constants ----
 ft={'bool':lambda x: repr(x.astype('int32')),
@@ -97,9 +97,28 @@ np.set_printoptions(edgeitems=10, linewidth=80, precision=2,
                     suppress=True, threshold=100, 
                     formatter=ft)
 script = sys.argv[0]
-#
-#---- functions ----
-@timing
+# ---- timing deco ----
+# ---- decorators ----
+def time_deco(func):  # timing originally
+    """timing decorator function"""
+    import time
+    from functools import wraps
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        t0 = time.perf_counter()        # start time
+        result = func(*args, **kwargs)  # ... run the function ...
+        t1 = time.perf_counter()        # end time
+        dt = t1-t0
+        print("\nTiming function for... {}\n".format(func.__name__))
+        print("  Time taken ...{: <8.2e} sec. for {:,} objects".format(dt,len(result)))
+        #print("\n  print results inside wrapper or use <return> ... ")
+        return result                   # return the result of the function
+        return dt                      # return delta time
+    return wrapper
+
+
+# ---- functions ----
+@time_deco
 def _func(fn, a, this):
     """called by 'find' see details there
     :  (cumsum, eq, neq, ls, lseq, gt, gteq, btwn, btwni, byond)
@@ -130,7 +149,7 @@ def _func(fn, a, this):
         low, upp = this
         return np.where( (a<low) | (a>upp) )[0]
 
-@timing     
+@time_deco    
 def find(a, func, this=None, count=0, keep=[], prn=False, r_lim=2):
     """ 
     : a    - array or array like
@@ -212,7 +231,7 @@ def _demo():
         print("\nFunction...: {}, this: {}\n  {}".format(func, this, final))   
     return a, final
 
-@timing
+@time_deco
 def _large():
     a = np.random.randint(0,10, size=1000000) #
     final = find(a, 'byond',[2,7], 0, keep=[], prn=False, r_lim=200)
@@ -237,4 +256,3 @@ if __name__=="__main__":
         print(mask)
 """    
     
-
