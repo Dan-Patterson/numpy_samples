@@ -156,6 +156,7 @@ def multiring_buffer():
     """ """
     buffers = []
     rads = [ 10, 20, 40, 80, 100] #, 40, 60, 100]
+    theta = 360
     clockwise=False
     for r in range(0, len(rads)):
         ring = buffer_ring(rads[r], rads[r-1], theta=theta)
