@@ -148,7 +148,8 @@ def _circle(radius=100, clockwise=True, theta=1, rot=0.0, scale=1, xc=0.0, yc=0.
     if rot != 0:
         rot_mat = rot_matrix(angle=rot) #angle)
         p_rot = np.dot(rot_mat, pnts.T) #p_trans.T).T + to_pnt
-        pnts = p_rot.T + [xc, yc]
+        pnts = p_rot.T
+    pnts = pnts + [xc, yc]
     return pnts
 
 
