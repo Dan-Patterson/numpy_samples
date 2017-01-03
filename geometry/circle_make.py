@@ -73,6 +73,28 @@ def plot_(pnts):
     #return fig, ax
 
 
+def rot_matrix(angle=0, nm_3=False):
+    """Return the rotation matrix given points and rotation angle
+    :Requires:
+    :--------
+    :  - rotation angle in degrees and whether the matrix will be used with
+    :  - homogenous coordinates
+    :Returns:
+    :-------
+    :  - rot_m - rotation matrix for 2D transform
+    :  - rotate around  translate(-x, -y).rotate(theta).translate(x, y)
+    """
+    rad = np.deg2rad(angle)
+    c = np.cos(rad)
+    s = np.sin(rad)
+    rm = np.array([[c, -s,  0.],
+                   [s,  c,  0.],
+                   [0., 0., 1.]])
+    if not nm_3:
+        rm = rm[:2,:2]
+    return rm
+
+
 def _arc(radius=100, start=0, stop=1, step=0.1, xc=0.0, yc=0.0):
     """
     :Requires:
@@ -95,7 +117,7 @@ def _arc(radius=100, start=0, stop=1, step=0.1, xc=0.0, yc=0.0):
     return p_lst
 
 
-def _circle(radius=100, clockwise=True, theta=1, xc=0.0, yc=0.0):
+def _circle(radius=100, clockwise=True, theta=1, rot=0.0, scale=1, xc=0.0, yc=0.0):
     """   
     :Requires
     :--------
@@ -121,9 +143,12 @@ def _circle(radius=100, clockwise=True, theta=1, xc=0.0, yc=0.0):
         angles = np.deg2rad(np.arange(-180.0, 180.0+theta, step=theta))
     #angles = np.append(angles, angles[0])
     x_s = radius*np.cos(angles)         # X values
-    y_s = radius*np.sin(angles)         # Y values
+    y_s = radius*np.sin(angles) * scale    # Y values
     pnts = np.c_[x_s,y_s]
-    pnts = pnts + [xc, yc]
+    if rot != 0:
+        rot_mat = rot_matrix(angle=rot) #angle)
+        p_rot = np.dot(rot_mat, pnts.T) #p_trans.T).T + to_pnt
+        pnts = p_rot.T + [xc, yc]
     return pnts
 
 
@@ -140,11 +165,11 @@ def arc_sector(outer=10, inner=9, start=1, stop=6, step=0.1):
     return pnts
 
 
-def buffer_ring(outer_rad=100, inner_rad=0, theta=10, xc=0.0, yc=0.0):
+def buffer_ring(outer_rad=100, inner_rad=0, theta=10, rot=0, scale=1, xc=0.0, yc=0.0):
     """Create a multi-ring buffer"""
-    top = _circle(outer_rad, clockwise=True, theta=theta, xc=xc, yc=yc)
+    top = _circle(outer_rad, clockwise=True, theta=theta, rot=rot, scale=scale, xc=xc, yc=yc)
     if inner_rad != 0.0:
-        bott = _circle(inner_rad, clockwise=False, theta=theta, xc=xc, yc=yc)
+        bott = _circle(inner_rad, clockwise=False, theta=theta, rot=rot, scale=scale, xc=xc, yc=yc)
         pnts = np.asarray([i for i in [*top, *bott]])
     else:
         pnts = top
@@ -153,16 +178,23 @@ def buffer_ring(outer_rad=100, inner_rad=0, theta=10, xc=0.0, yc=0.0):
 
 
 def multiring_buffer():
-    """ """
+    """Do a multiring buffer
+    : rads - buffer radii
+    : theta - angle density... 1 for 360 ngon, 120 for triangle
+    : rot - rotation angle for ellipses and other shapes
+    : scale - scale the y-values to produce ellipses
+    """
     buffers = []
     rads = [ 10, 20, 40, 80, 100] #, 40, 60, 100]
-    theta = 360
+    theta = 1
+    rot = 22.5
+    scale= 0.7
     clockwise=False
     for r in range(0, len(rads)):
-        ring = buffer_ring(rads[r], rads[r-1], theta=theta)
+        ring = buffer_ring(rads[r], rads[r-1], theta=theta, rot=rot, scale=scale)
         buffers.append(ring)
     plot_(buffers)
-    return buffers
+    #return buffers
 
 
 def multi_sector():
@@ -195,8 +227,8 @@ if __name__=="__main__":
     #print("\narc points...\n{}".format(a_list))
     #pnts = arc_sector()
     #pnts = buffer_rings()
-    #multi_buffer()
     #multi_sector()
+    multiring_buffer()
 """
 rows = 4
 cols = 6
