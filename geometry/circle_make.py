@@ -51,8 +51,8 @@ def plot_(pnts):
     #y_max = pnts[:,1].max()
     fig, ax = plt.subplots()
     patches = []
-    for i in pnts:
-        polygon = Polygon(i, True)
+    for i in pnts:  # Points need to form a closed loop
+        polygon = Polygon(i, closed=False)  # set closed to True if your 1st and last pnt aren't equal
         patches.append(polygon)
     p = PatchCollection(patches, cmap=matplotlib.cm.jet, alpha=1.0)
     colors = 100*np.random.rand(len(patches))
