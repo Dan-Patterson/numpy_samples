@@ -2,104 +2,6 @@
 """
 :Script:   frmt_masked_arr.py
 :Author:   Dan.Patterson@carleton.ca
-:Modified: 2016-07-25
-:Purpose:
-:  This sample produces a n*m shaped array which you could pass parameters
-:  to, but it is simpler to edit them here. It then produces a random
-:  choice set of locations and sets them to a value which is masked and a
-:  true masked array is produced.
-:  The location of the selection and their original values is also returned.
-:
-:Sample
-:  shp = (5,4)
-:  a = np.arange(np.prod(shp)).reshape(shp)
-:  m = np.random.randint(0, np.prod(shp), 5)
-:  array([ 7, 16,  8,  0, 18])
-:  ix = np.in1d(a.ravel(), m).reshape(a.shape)
-:  array([[1, 0, 0, 0],
-:         [0, 0, 0, 1],
-:         [1, 0, 0, 0],
-:         [0, 0, 0, 0],
-:         [1, 0, 1, 0]], dtype=bool)
-:  a_m = np.ma.array(a, mask=ix, fill_value=-1)
-:
-:Retrieving mask values:
-:  if you need to retrieve the mask values and they aren't know, then you can try
-:
-:  msk = np.unique(c._data.flatten()*c._mask.flatten())
-:
-:Example:
-:-------
-:  shp = (5,4)
-:  a = np.arange(np.prod(shp)).reshape(shp)
-:  m = np.random.randint(0, np.prod(shp), 5)
-:    = array([ 7,  5,  1,  5, 15])
-:
-:  the array                     the mask
-:  array([[ 0,  -,  2,  3],       [[0 1 0 0],
-:         [ 4,  -,  6,  -],        [0 1 0 1],
-:         [ 8,  9, 10, 11],        [0 0 0 0],
-:         [12, 13, 14,  -],        [0 0 0 1],
-:         [16, 17, 18, 19]])       [0 0 0 0]], fill_value = -1
-:
-:  ix = np.in1d(a.ravel(), m).reshape(a.shape)
-:  array([[0, 1, 0, 0],
-:         [0, 1, 0, 1],
-:         [0, 0, 0, 0],
-:         [0, 0, 0, 1],
-:         [0, 0, 0, 0]], dtype=bool)
-:
-: - Produce the masked array as shown above.  Retrieve the mask if unknown.
-:
-:  a_m = np.ma.array(a, mask=ix, fill_value=-1)
-:  
-:  msk = np.unique(a_m._data.flatten()*a_m._mask.flatten())
-:      = array([ 0,  1,  5,  7, 15])
-:
-"""
-#---- imports, formats, constants ----
-import sys
-import numpy as np
-from textwrap import dedent
-import arr_tools as arr
-
-ft = {'bool':lambda x: repr(x.astype('int32')),
-      'float': '{: 0.3f}'.format}
-np.set_printoptions(edgeitems=10, linewidth=80, precision=2,
-                    suppress=True, threshold=100,
-                    formatter=ft)
-
-script = sys.argv[0]
-
-#---- function ----
-def frmt_ma(a, prn=True):
-    """
-    :Requires
-    :--------
-    : Input a masked array.  Get a string representation of the array.
-    : Determine the maximum value and format each column using that value.
-    :
-    :Returns
-    :-------
-    : Returns a print version of a masked array formatted with masked
-    : values and appropriate spacing.
-    : b = a.reshape(2,4,5) for 3d
-    """
-    def _fix(v, tmp):
-        """ sub array adjust"""
-        r = [['[['," "], ['[', ""], [']', ""], [']]', ""]]
-        for i in r:
-            tmp = tmp.replace(i[0], i[1])
-        tmp0 = [i.strip().split(' ') for i in tmp.split('\n')]        
-        N = len(tmp0[0])
-        out = []
-        for i in range(len(tmp0)):
-            out.append((ft*N).format(*tmp0[i]))
-        v += "\n".join([i for i in out])       
-# -*- coding: UTF-8 -*-
-"""
-:Script:   frmt_masked_arr.py
-:Author:   Dan.Patterson@carleton.ca
 :Modified: 2017-01-08
 :Purpose:
 :  This sample produces a n*m shaped array which you could pass parameters
@@ -122,7 +24,7 @@ def frmt_ma(a, prn=True):
 :  a_m = np.ma.array(a, mask=ix, fill_value=-1)
 :
 :Retrieving mask values:
-:  if you need to retrieve the mask values and they aren't know, then you can try
+:  to retrieve the mask values if they aren't known, then try
 :
 :  msk = np.unique(c._data.flatten()*c._mask.flatten())
 :
@@ -155,6 +57,7 @@ def frmt_ma(a, prn=True):
 :      = array([ 0,  1,  5,  7, 15])
 :
 """
+
 #---- imports, formats, constants ----
 import sys
 import numpy as np
@@ -256,3 +159,4 @@ if __name__ == "__main__":
     """   """
     #print("Script... {}".format(script))
     a, b = _ma_demo()
+
