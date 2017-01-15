@@ -75,7 +75,8 @@ np.ma.masked_print_option.set_display('-')
 
 script = sys.argv[0]
 
-__all__ = ['e_area',
+__all__ = ['obj_area',
+           'e_area',
            'e_dist',
            'e_leng',
            'area_demo',
@@ -331,17 +332,7 @@ def main():
 if __name__ == "__main__":
     """Main section...   """
     #print("Script... {}".format(script))
-    a, b, c, d, e, f, g, h, v1 = _data(dt='float64')
-    area_demo(dt='float64')
+    #a, b, c, d, e, f, g, h, v1 = _data(dt='float64')
+    #area_demo(dt='float64')
     #leng_demo(dt='float64')
     #a, a1, b1, c1, subs = main()
-"""
-a1 = [[0, 0], [0, 5], [0, 10], [5, 10],
-          [10, 10], [10, 5], [10, 0], [5, 0], [0, 0]]  # densified
-b1 = [[3, 3], [3, 7], [7, 7], [7, 3], [3, 3]]      # inner ring
-c1 = [[10, 0], [15, 10], [20, 0], [10, 0]]         # triangle
-v1 = [[[a1, b1], c1]]       # since the sizes a
-t = [a1, v1, b1, c1, v1]
-bail = 10
-x =[[i, np.array(t[i])] for i in range(len(t)) if len(t[i])>1]
-"""
