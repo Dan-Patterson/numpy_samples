@@ -1,0 +1,164 @@
+         Generate closest features by distance
+         -------------------------------------
+         
+From near.py  
+Emulating Generate Near Table from ArcMap
+
+Let us begin with finding the closest 3 points to every point in a point set.  
+Well, that is easy... we just use the 'Generate Near Table tool'.
+
+You have been spoiled.  This tool is only available at the Advanced license level.  You are now working in a job that uses a Standard license... what to do!?
+
+Of course!.... roll out your own.
+We will begin with a simple call to 'n_near' in near.py.
+
+We can step through the process...
+
+Begin with array 'a'.  Since we are going to use einsum to perform the distance calculations, we need to clone and reshape the array to facilitate the process.
+
+The following array, 'a', represents the 4 corners of a 2x2 unit square, with a centre point.  The points are arranged in clockwise order.  
+
+>>> a   # a.shape => (5, 2)
+array([[0, 0],
+       [0, 2],
+       [2, 2],
+       [2, 0],
+       [1, 1]], dtype=int32)
+
+The array reshaping is needed in order subtract the arrays.
+
+>>> b = a.reshape(np.prod(a.shape[:-1]), 1, a.shape[-1])
+>>> b   # b.shape => (5, 1, 2)
+array([[[0, 0]],
+
+       [[0, 2]],
+
+       [[2, 2]],
+
+       [[2, 0]],
+
+       [[1, 1]]], dtype=int32)
+       
+I have documented the details of the array construction and einsum notation elsewhere.  Suffice to say, we can now subtract the two arrays, perform the einsum product summation and finish with the euclidean distance calculation.
+
+The difference array produces 5 blocks of 5x2 values.  The summation of the products of these arrays essentially yields the squared distance, from which, euclidean distance is derived.  There are other ways of doing this, such as dot product calculations. I prefer einsum methods since it can be scaled up from 1D to n-D unlike most other approaches.
+
+>>> diff =  b - a    # diff.shape => (5, 5, 2)
+
+The 'diff' array looks like the following.  I took the liberty of using a function in arr_tools (on github) to rearrange the array into a more readable form ( https://github.com/Dan-Patterson/numpy_samples/blob/master/formatting/arr_frmts.py )
+
+>>> import arr_tools as art
+>>> art.frmt_(diff) 
+Array...
+-shape (5, 5, 2), ndim 3
+  .  0  0    0 -2   -2 -2   -2  0   -1 -1  
+  .  0  2    0  0   -2  0   -2  2   -1  1  
+  .  2  2    2  0    0  0    0  2    1  1  
+  .  2  0    2 -2    0 -2    0  0    1 -1  
+  .  1  1    1 -1   -1 -1   -1  1    0  0  
+ 
+The distance calculation is pretty simple, just a bit of einsum notation, get rid of some extraneous dimensions if present and there you have it...
+
+>>> dist = np.einsum('ijk,ijk->ij', diff, diff)  # the magic happens...
+>>> d = np.sqrt(dist).squeeze()                  # get rid of extra 'stuff'
+>>> d                                            # the distance array...
+array([[ 0.0,  2.0,  2.8,  2.0,  1.4],
+       [ 2.0,  0.0,  2.0,  2.8,  1.4],
+       [ 2.8,  2.0,  0.0,  2.0,  1.4],
+       [ 2.0,  2.8,  2.0,  0.0,  1.4],
+       [ 1.4,  1.4,  1.4,  1.4,  0.0]])
+
+The result as you can see from the above is a row-column structure much like that derived from scipy's cdist function.  Each row and column represents a point, resulting in the diagonal having a distance of zero.
+
+The next step is to get a sorted list of the distances.  This is where np.argsort comes into play, since it returns a list of indices that represent the sorted distance values.  The indices are used to pull out the coordinates in the appropriate order.
+
+>>> kv = np.argsort(d, axis=1)       # sort 'd' on last axis to get keys
+>>> kv
+array([[0, 4, 1, 3, 2],
+       [1, 4, 0, 2, 3],
+       [2, 4, 1, 3, 0],
+       [3, 4, 0, 2, 1],
+       [4, 0, 1, 2, 3]])
+
+>>> coords = a[kv]     # for each point, pull out the points in closest order
+>>> a[kv].shape        # the shape is still not ready for use...
+(5, 5, 2)
+
+The coordinate array (coords) needs to be reshaped so that the X, Y pair values can be laid out in row format for final presentation.  Each point calculates the distances to itself and the other points, so the array has 5 groupings of 5 pairs of coordinates.  This can be reshaped, to produce 5 rows of x, y values using the following.
+
+>>> s0, s1, s2 = coords.shape
+>>> coords = coords.reshape((s0, s1*s2))  # the result will be a 2D array...
+>>> coords
+array([[0, 0, 1, 1, 0, 2, 2, 0, 2, 2],
+       [0, 2, 1, 1, 0, 0, 2, 2, 2, 0],
+       [2, 2, 1, 1, 0, 2, 2, 0, 0, 0],
+       [2, 0, 1, 1, 0, 0, 2, 2, 0, 2],
+       [1, 1, 0, 0, 0, 2, 2, 2, 2, 0]], dtype=int32)
+
+Each row represents an input point in the order they were input.  Compare input array 'a' with the first two columns of the 'coords' array to confirm.  The remaining columns are pairs of the x, y values arranged by their distance sorted order (more about this later).
+
+The distance values are then sorted in ascending order.  Obviously, the first value in each list will be the distance of each point to itself (0.0) so it is sliced off leaving the remaining distances.
+
+>>> dist = np.sort(d)[:,1:]          # slice sorted distances, skip 1st
+>>> dist
+array([[ 1.4,  2.0,  2.0,  2.8],
+       [ 1.4,  2.0,  2.0,  2.8],
+       [ 1.4,  2.0,  2.0,  2.8],
+       [ 1.4,  2.0,  2.0,  2.8],
+       [ 1.4,  1.4,  1.4,  1.4]])
+
+If you examine the points that were used as input, they formed a rectangle with a point in the middle.  It should come as no surprise that the first column represents the distance of each point to the center point (the last row).  The next two columns are the distance of each point to its adjacent neighbour while the last column is the distance of each point to its diagonal.  The exception is of course the center point (last row) which is equidistant to the other 4 points.
+
+The rest of the code is nothing more that a fancy assemblage of the resultant data into a structure that can be used to output a structured array of coordinates and distances, which can be brought in to ArcMap to form various points or polyline assemblages.
+
+
+Here are the results from the script...
+
+:-----------------------------------------------------------------
+:Closest 2 points for points in an array.  Results returned as
+:  a structured array with coordinates and distance values.
+Demonstrate n_near function ....
+
+:Input points... array 'a'
+[[0 0]
+ [0 2]
+ [2 2]
+ [2 0]
+ [1 1]]
+
+:output array
+
+     ID     Xo     Yo   C0_X   C0_Y   C1_X   C1_Y  Dist0  Dist1
+   0.00   0.00   0.00   1.00   1.00   0.00   2.00   1.41   2.00
+   1.00   0.00   2.00   1.00   1.00   0.00   0.00   1.41   2.00
+   2.00   1.00   1.00   0.00   0.00   0.00   2.00   1.41   1.41
+   3.00   2.00   2.00   1.00   1.00   0.00   2.00   1.41   2.00
+   4.00   2.00   0.00   1.00   1.00   0.00   0.00   1.41   2.00
+:------------------------------------------------------------------
+
+This is the final form of the array.
+
+array([(0, 0.0, 0.0, 1.0, 1.0, 0.0, 2.0, 1.4142135..., 2.0),
+       (1, 0.0, 2.0, 1.0, 1.0, 0.0, 0.0, 1.4142135..., 2.0),
+       (2, 1.0, 1.0, 0.0, 0.0, 0.0, 2.0, 1.4142135..., 1.4142135...),
+       (3, 2.0, 2.0, 1.0, 1.0, 0.0, 2.0, 1.4142135..., 2.0),
+       (4, 2.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.4142135..., 2.0)], 
+      dtype=[('ID', '<i4'),
+             ('Xo', '<f8'), ('Yo', '<f8'), 
+             ('C0_X', '<f8'), ('C0_Y', '<f8'),
+             ('C1_X', '<f8'), ('C1_Y', '<f8'),
+             ('Dist0', '<f8'), ('Dist1', '<f8')])
+
+I took the liberty of doing some fiddling with the format to make it easier to read.  It should be readily apparent that this array could be used as input to NumPyArrayToFeatureClass so that you can produce a featureclass or shapefile of the data.
+
+That is about all now.  There are a variety of ways to perform the same thing... hope this adds to your arsenal of tools.
+
+
+References:
+----------
+   http://desktop.arcgis.com/en/arcmap/latest/tools/analysis-toolbox/generate-near-table.htm
+
+   https://github.com/Dan-Patterson/numpy_samples/blob/master/geometry/scripts/near.py
+
+
+----------------------------------------------------------------------------
