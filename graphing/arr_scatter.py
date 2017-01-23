@@ -118,4 +118,3 @@ if __name__ == "__main__":
     """Main section...   """
     #print("Script... {}".format(script))
     a, plt, ax = _demo()
-    #print("{}".format("sknaht"[::-1]))
