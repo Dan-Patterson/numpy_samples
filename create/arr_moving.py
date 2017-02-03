@@ -7,7 +7,7 @@
 :
 :Functions:
 : public  -  block, stride, deline, rolling_stats (_check required)
-: private - _check, _pad, _demo  
+: private - _check, _pad, _demo
 :
 :Notes:
 :  The following demonstration, shows how deline, stride, block
@@ -16,14 +16,14 @@
 :  ---- rolling_stats example ----
 :  Stride the input array, 'a' using a 3x3 window
 :
-:    c = stride(a, r_c=(3, 3))
+:    c = stride(a, r_c=(3,3))
 :
 :    Main array... 'a'
 :    ndim: 2 size: 54
 :    shape: (6, 9)
 :    [[ 0  1 ...,  7  8]
 :     [ 9 10 ..., 16 17]
-:     ..., 
+:     ...,
 :     [36 37 ..., 43 44]
 :     [45 46 ..., 52 53]]
 :    print(deline(c[0][:2]))
@@ -52,9 +52,9 @@
 :     [ 28.0  29.0 ...,  33.0  34.0]
 :     [ 37.0  38.0 ...,  42.0  43.0]]
 :
-:  Which is what we expect.  The trick is to produce the 
-:  stats on the last 2 entries in the array's shape.  If we do this 
-:  with a normal 2D array, like 'a', we get... 
+:  Which is what we expect.  The trick is to produce the
+:  stats on the last 2 entries in the array's shape.  If we do this
+:  with a normal 2D array, like 'a', we get...
 :      np.mean(a,axis=(0,1)) == 26.5
 :  which for the whole 6*9 array rather than moving 3*3 window slices
 :  through it.  Striding or blocking a 2D array, results in a 4D
@@ -110,10 +110,10 @@
 :
 :References
 :
-: 
+:
 """
 
-#---- imports, formats, constants ----
+# ---- imports, formats, constants ----
 import sys
 import numpy as np
 from numpy.lib.stride_tricks import as_strided
@@ -126,17 +126,16 @@ __outside__ = ['as_strided', 'dedent', 'deline']
 ft={'bool': lambda x: repr(x.astype('int32')),
     'float': '{: 0.1f}'.format}
 np.set_printoptions(edgeitems=5, linewidth=80, precision=2,
-                    suppress=True, threshold=100, 
+                    suppress=True, threshold=100,
                     formatter=ft)
 
 script = sys.argv[0]
 
-
-#---- functions ----
+# ---- functions ----
 def _check(a, r_c):
     """Performs the array checks necessary for stride and block.
     : a   - Array or list.
-    : r_c - tuple/list/array of rows x cols.  Attempts will be made to 
+    : r_c - tuple/list/array of rows x cols.  Attempts will be made to
     :     produce a shape at least (1*c).  If a scalar is given, the
     :     minimum shape will be (1*r) for 1D array or (1*c) for 2D
     :     array if r<c.  Be aware
@@ -146,7 +145,7 @@ def _check(a, r_c):
     r, c = r_c
     a = np.atleast_2d(a)
     shp = a.shape
-    r, c = r_c = ( min(r, a.shape[0]), min(c, shp[1]) ) 
+    r, c = r_c = (min(r, a.shape[0]), min(c, shp[1]))
     a = np.ascontiguousarray(a)
     return a, shp, r, c, tuple(r_c)
 
@@ -154,40 +153,43 @@ def _check(a, r_c):
 def _pad(a, nan_edge=False):
     """Pad a sliding array to allow for stats"""
     if nan_edge:
-        a = np.pad(a, pad_width=(1,2), mode="constant", constant_values=(np.NaN, np.NaN))
+        a = np.pad(a, pad_width=(1, 2), mode="constant",
+                   constant_values=(np.NaN, np.NaN))
     else:
-        a = np.pad(a, pad_width=(1,1), mode="reflect")  # reflect
+        a = np.pad(a, pad_width=(1, 1), mode="reflect")
     return a
-        
-def stride(a, r_c=(3,3)):
-    """Provide a 2D sliding/moving view of an array.  
+
+      
+def stride(a, r_c=(3, 3)):
+    """Provide a 2D sliding/moving view of an array. 
     :  There is no edge correction for outputs.
     :
     :Requires
     :--------
     : a - array or list, usually a 2D array.  Assumes the rows is >=1,
     :     it is corrected as is the number of columns.
-    : r_c - tuple/list/array of rows x cols.  Attempts will be made to 
+    : r_c - tuple/list/array of rows x cols.  Attempts will be made to
     :     produce a shape at least (1*c).  If a scalar is given, the
     :     minimum shape will be (1*r) for 1D array or (1*c) for 2D
     :     array if r<c.  Be aware
     """
     a, shp, r, c, r_c = _check(a, r_c)
-    shape = (a.shape[0] - r + 1, a.shape[1] - c + 1) + r_c
-    strides = a.strides * 2
-    a_s = (as_strided(a, shape=shape, strides=strides)).squeeze()    
+    shp = (a.shape[0] - r + 1, a.shape[1] - c + 1) + r_c
+    strd = a.strides * 2
+    a_s = (as_strided(a, shape=shp, strides=strd)).squeeze()
     return a_s
 
-def block(a, r_c=(3,3)):
+
+def block(a, r_c=(3, 3)):
     """See _check and/or stride for documentation.  This function
     :  moves in increments of the block size, rather than sliding
     :  by one row and column
     :
     """
     a, shp, r, c, r_c = _check(a, r_c)
-    shape = (a.shape[0]/r, a.shape[1]/c) + r_c
-    strides = (r*a.strides[0], c*a.strides[1]) + a.strides
-    a_b = as_strided(a, shape=shape, strides=strides).squeeze()
+    shp = (a.shape[0]/r, a.shape[1]/c) + r_c
+    strd = (r*a.strides[0], c*a.strides[1]) + a.strides
+    a_b = as_strided(a, shape=shp, strides=strd).squeeze()
     return a_b
 
 
@@ -196,20 +198,20 @@ def rolling_stats(a, no_null=True, prn=True):
     :Requires
     :--------
     : a - 2D array
-    : no_null - boolean indicating whether to use masked values (nan) or not.
-    : prn - boolean indicating whether to print the results or return the values.
+    : no_null - boolean, whether to use masked values (nan) or not.
+    : prn - boolean, to print the results or return the values.
     :
     :Returns
     :-------
-    : The results return an array of 4 dimensions representing the original 
-    : array size and block size
-    : eg.  original = 6x6 array   block = 3x3  
+    : The results return an array of 4 dimensions representing the original    : array size and block size
+    : eg.  original = 6x6 array   block = 3x3
     :      breaking the array into 4 chunks
     """
     a = np.asarray(a)
     a = np.atleast_2d(a)
+    ax = None
     if a.ndim > 1:
-        ax = (2, 3) # ax = tuple(np.arange(len(c.shape))[-2:])
+        ax = tuple(np.arange(len(a.shape))[-2:])
     if no_null:
         a_min = a.min(axis=ax)
         a_max = a.max(axis=ax)
@@ -235,45 +237,45 @@ def rolling_stats(a, no_null=True, prn=True):
     else:
         return a_min, a_max, a_mean, a_sum, a_std, a_var, a_ptp
 
-#-----------------------------------    
+# -----------------------------------
 def _demo():
-    """   
+    """
     :Run demo of block, for a 2D array which yields a 3D array
     :Run a stride of a 2D array which yields a 4D array
     """
-    r = 6        # array rows
-    c = 9        # array columns
+    r = 6         # array rows
+    c = 9         # array columns
     r_c = (3, 3)  # moving/block window size
     a = np.arange(r*c).reshape(r, c)
     b = block(a)
     c = stride(a, r_c)
-    deline(a, prn=True)
-    deline(b, prn=True)
-    deline(c, prn=True)
-    frmt ="""
+    print(deline(a))
+    print(deline(b))
+    print(deline(c))
+    frmt = """
     Rolling stats for 'a' using a 3x3 rolling window
     :array a...
     :  ndim {}  size {}
     :  print(deline(c[0][:2])
     {}
-    :etc......
+    :etc......\n
     :rolling mean:
-    :  c = stride(a, r_c=(3, 3))
+    :  c = stride(a, r_c=(3,3))
     :  c.shape  # (4, 7, 3, 3)
-    :  ax = tuple(np.arange(len(c.shape))[-2:])  # (0, 1, 2, 3) => (2, 3)
+    :  ax = tuple(np.arange(len(c.shape))[-2:]) #(0,1,2,3) => (2,3)
     :  c_m =np.mean(c, ax)
     : ==> {}
     """
-    c_m = np.mean(c,axis=(2, 3))
-    as0 = deline(c[0][:2], prn=False)
-    as1 = deline(c_m, prn=False)
+    c_m = np.mean(c, axis=(2, 3))
+    as0 = deline(c[0][:2])
+    as1 = deline(c_m)
     args = [c.ndim, c.size, as0, as1]
     print(dedent(frmt).format(*args))
     return a, b, c
 
 #
-#------------------------
-if __name__ == "__main__":
+# ----------------------
+if __name__=="__main__":
     """   """
     #print("Script... {}".format(script))
     a, b, c = _demo()
