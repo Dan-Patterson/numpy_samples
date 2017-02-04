@@ -30,7 +30,7 @@
 :
 :---------------------------------------------------------------------:
 """
-#---- imports, formats, constants ----
+# ---- imports, formats, constants ----
 
 import sys
 import numpy as np
@@ -39,13 +39,14 @@ from textwrap import dedent, indent
 ft = {'bool': lambda x: repr(x.astype('int32')),
       'float': '{: 0.3f}'.format}
 np.set_printoptions(edgeitems=10, linewidth=80, precision=2,
-                    suppress=True, threshold=100, 
+                    suppress=True, threshold=100,
                     formatter=ft)
 np.ma.masked_print_option.set_display('-')
 
 script = sys.argv[0]
 
-#---- functions ----
+# ---- functions ----
+
 
 def line_dir(orig, dest, fromNorth=False):
     """Direction of a line given 2 points
@@ -62,17 +63,18 @@ def line_dir(orig, dest, fromNorth=False):
         ang = np.mod((450.0 - ang), 360.)
     return ang
 
+
 def demo(xc=0, yc=0, fromNorth=True):
     """ run the demo with the data below """
     p0 = np.array([xc, yc])  # origin point
-    p1 = p0 + [-1, 1]  # NW
-    p2 = p0 + [0, 1]   # N
-    p3 = p0 + [1, 1]   # NE
-    p4 = p0 + [1, 0]   # E
-    p5 = p0 + [1, -1]  # SE
-    p6 = p0 + [0, -1]  # S
-    p7 = p0 + [-1, -1] # SW
-    p8 = p0 + [-1, 0]  # W
+    p1 = p0 + [-1, 1]   # NW
+    p2 = p0 + [0, 1]    # N
+    p3 = p0 + [1, 1]    # NE
+    p4 = p0 + [1, 0]    # E
+    p5 = p0 + [1, -1]   # SE
+    p6 = p0 + [0, -1]   # S
+    p7 = p0 + [-1, -1]  # SW
+    p8 = p0 + [-1, 0]   # W
     #
     od = [[p0, p1], [p0, p2], [p0, p3], [p0, p4],
           [p0, p5], [p0, p6], [p0, p7], [p0, p8]]
@@ -81,7 +83,7 @@ def demo(xc=0, yc=0, fromNorth=True):
         ang = line_dir(orig, dest, fromNorth=fromNorth)
         if fromNorth:
             dir = "From N."
-        else: 
+        else:
             dir = "From x-axis"
         args = [orig, dest, dir, ang]
         print("orig: {}: dest: {!s:<8} {}: {!s:>6}".format(*args))
@@ -90,7 +92,7 @@ def demo(xc=0, yc=0, fromNorth=True):
 # ---------------------------------------------------------------------
 if __name__ == "__main__":
     """Main section...   """
-    #print("Script... {}".format(script))
+#    print("Script... {}".format(script))
     xc = 300000   # pick an origin x  0 or 300000 for example
     yc = 5025000  # pick an origin y  0 or 5025000
-    demo(xc, yc, fromNorth = True)
+    demo(xc, yc, fromNorth=True)
