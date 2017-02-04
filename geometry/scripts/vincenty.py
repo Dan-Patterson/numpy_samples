@@ -18,6 +18,10 @@
 :  atan2(y,x) or atan2(sin, cos) not like Excel
 :  used fmod(x,y) to get the modulous as per python
 :
+: *** link to haversine... see if vincenty can be vectorized in the same way
+:  http://stackoverflow.com/questions/34552284/vectorize-haversine-distance-
+:        computation-along-path-given-by-list-of-coordinates
+:
 :Returns:
 :  distance in meters, initial and final bearings (as an azimuth from N)
 :
@@ -36,7 +40,7 @@
 :
 :---------------------------------------------------------------------:
 """
-#---- imports, formats, constants ----
+# ---- imports, formats, constants ----
 
 import sys
 import numpy as np
@@ -46,13 +50,13 @@ from textwrap import dedent, indent
 ft = {'bool': lambda x: repr(x.astype('int32')),
       'float': '{: 0.3f}'.format}
 np.set_printoptions(edgeitems=10, linewidth=80, precision=2,
-                    suppress=True, threshold=100, 
+                    suppress=True, threshold=100,
                     formatter=ft)
 np.ma.masked_print_option.set_display('-')
 
 script = sys.argv[0]
 
-#---- functions ----
+# ---- functions ----
 
 
 def getDistance(long0, lat0, long1, lat1):
@@ -67,6 +71,7 @@ def getDistance(long0, lat0, long1, lat1):
     """
     a = 6378137.0
     b = 6356752.314245
+    ab_b = (a**2 - b**2)/b**2
     f = 1.0/298.257223563
     twoPI = 2*math.pi
     dL = L = math.radians(long1 - long0)
@@ -76,62 +81,63 @@ def getDistance(long0, lat0, long1, lat1):
     c_u0 = math.cos(u0)
     s_u1 = math.sin(u1)
     c_u1 = math.cos(u1)
+    # ---- combine repetitive terms ----
+    sc_01 = s_u0*c_u1
+    cs_01 = c_u0*s_u1
+    cc_01 = c_u0*c_u1
+    ss_01 = s_u0*s_u1
     #
-    lambdaP  = float()
+    lambdaP = float()
     iterLimit = 100
     # first approximation
     while (iterLimit > 0):
-        sin_dL = math.sin(dL)
-        cos_dL = math.cos(dL)
-        s_sig = math.sqrt((c_u1*sin_dL)**2 +
-                             (c_u0*s_u1 - s_u0*c_u1*cos_dL)**2)     # eq14
+        s_dL = math.sin(dL)
+        c_dL = math.cos(dL)
+        s_sig = math.sqrt((c_u1*s_dL)**2 + (cs_01 - sc_01*c_dL)**2)  # eq14
         if (s_sig == 0):
             return 0
-        c_sig = s_u0*s_u1 + c_u0*c_u1*cos_dL                        # eq 15
-        sigma = math.atan2(s_sig, c_sig)                            # eq 16 
-        s_alpha = c_u0*c_u1*sin_dL/s_sig                            # eq 17
-        cosSqAlpha = 1.0 - s_alpha**2
-        if cosSqAlpha != 0.0:
-            cos2SigmaM = c_sig - 2.0*s_u0*s_u1/cosSqAlpha           # eq 18
+        c_sig = ss_01 + cc_01*c_dL                      # eq 15
+        sigma = math.atan2(s_sig, c_sig)                # eq 16
+        s_alpha = cc_01*s_dL/s_sig                      # eq 17
+        c_alpha2 = 1.0 - s_alpha**2
+        if c_alpha2 != 0.0:
+            c_sigM2 = c_sig - 2.0*s_u0*s_u1/c_alpha2    # eq 18
         else:
-            cos2SigmaM = c_sig
-        C = f/16.0 * cosSqAlpha*(4 + f*(4 - 3*cosSqAlpha))          # eq 10
+            c_sigM2 = c_sig
+        C = f/16.0 * c_alpha2*(4 + f*(4 - 3*c_alpha2))  # eq 10
         lambdaP = dL
         # dL => equation 11
         dL = L + (1 - C)*f*s_alpha*(sigma +
-                                    C*s_sig*(cos2SigmaM +
-                                             C*c_sig*(-1.0 +
-                                                      2*cos2SigmaM**2)))
+                                    C*s_sig*(c_sigM2 +
+                                             C*c_sig*(-1.0 + 2*c_sigM2**2)))
         #
-        if (iterLimit == 0):          #is it time to bail?
+        if (iterLimit == 0):          # is it time to bail?
             return 0.0
         elif((math.fabs(dL - lambdaP) > 1.0e-12) and (iterLimit > 0)):
             iterLimit = iterLimit - 1
         else:
             break
-
-    uSq = cosSqAlpha * (a**2 - b**2)/b**2
-    A = 1 + uSq/16384.0	* (4096 + uSq*(-768 + uSq*(320 - 175*uSq)))  # eq 3
+    # ---- end of while ----
+    uSq = c_alpha2 * ab_b
+    A = 1 + uSq/16384.0 * (4096 + uSq*(-768 + uSq*(320 - 175*uSq)))  # eq 3
     B = uSq/1024.0 * (256 +  uSq*(-128 + uSq*(74 - 47*uSq)))         # eq 4
-    d_sigma = B*s_sig*(cos2SigmaM + 
-                (B/4.0)*(c_sig*(-1 + 2*cos2SigmaM**2) - 
-                (B/6.0)*cos2SigmaM*(-3 + 4*s_sig**2)*(-3 + 4*cos2SigmaM**2)))
+    d_sigma = B*s_sig*(c_sigM2 + 
+                      (B/4.0)*(c_sig*(-1 + 2*c_sigM2**2) -
+                      (B/6.0)*c_sigM2*(-3 + 4*s_sig**2)*(-3 +
+                      4*c_sigM2**2)))
     # d_sigma => eq 6
     dist = b*A*(sigma - d_sigma)                                     # eq 19
-    alpha1 = math.atan2(c_u1*sin_dL,  c_u0*s_u1-s_u0*c_u1*cos_dL)
-    alpha2 = math.atan2(c_u0*sin_dL, -s_u0*c_u1+c_u0*s_u1*cos_dL)
+    alpha1 = math.atan2(c_u1*s_dL,  cs_01 - sc_01*c_dL)
+    alpha2 = math.atan2(c_u0*s_dL, -sc_01 + cs_01*c_dL)
     # normalize to 0...360  degrees
     alpha1 = math.degrees(math.fmod((alpha1 + twoPI), twoPI))        # eq 20
     alpha2 = math.degrees(math.fmod((alpha2 + twoPI), twoPI))        # eq 21
     return dist, alpha1, alpha2
 
 
-# ---------------------------------------------------------------------
-if __name__ == "__main__":
-    """Main section...   """
-    #print("Script... {}".format(script))
-    # ----- uncomment one of the  below  -------------------
-    coord = [-76.0, 46.0, -75.0, 45.0] # SE
+def demo():
+    """ testing function edit as appropriate """
+    coord = [-76.0, 46.0, -75.0, 45.0]  # SE
     #coord = [-90.0, 0.0, 0, 0.0]       # 1/4 equator
     #coord = [-75.0, 0.0, -75.0, 90.0]  # to N pole
     a0, a1, a2, a3 = coord
@@ -148,5 +154,41 @@ if __name__ == "__main__":
     :  Final   {:>8.2f} deg
     :--------------------------------------------------------:
     """
-    print (dedent(frmt).format(a0, a1, a2, a3, b0, b1, b2) )
+    print (dedent(frmt).format(a0, a1, a2, a3, b0, b1, b2))
+
+
+def vin():
+    """ """
+    #    long0, lat0, long1, lat1
+    vals = [[90.0,  0.0,  0.0,  0.0],
+            [0.0,  0.0, 0.0, 90.0],
+            [-75.0, 45.0, -75.0, 46.0]]
+    v = np.array(vals)
+    #
+    a = 6378137.0
+    b = 6356752.314245
+    f = 1.0/298.257223563
+    twoPI = 2*math.pi
+    #
+    long0 = v[:, 2]
+    long1 = v[:, 0]
+    lat0 = v[:, 1]
+    lat1 = v[:, 3]
+    dL = L = np.radians(long1 - long0)
+    u0 = np.arctan((1 - f) * np.tan(np.radians(lat0)))
+    u1 = np.arctan((1 - f) * np.tan(np.radians(lat1)))
+    s_u0 = np.sin(u0)
+    c_u0 = np.cos(u0)
+    s_u1 = np.sin(u1)
+    c_u1 = np.cos(u1)
+    return long0
+# ---------------------------------------------------------------------
+if __name__ == "__main__":
+    """Main section...   """
+    #print("Script... {}".format(script))
+    # ----- uncomment one of the  below  -------------------
+    #long0 = vin()
+
+
+
 
