@@ -6,7 +6,7 @@
 :
 :Purpose:  Determine the nearest points based on euclidean distance within
 :  a point file.  Also, a function to ensure points have a minimum spacing.
-: 
+:
 :References:
 :----------
 : - creating meshgrids from x,y data and plotting ....
@@ -27,7 +27,7 @@
 :         between-points-in-two-different-numpy-arrays-not-within
 :---------------------------------------------------------------------:
 """
-#---- imports, formats, constants ----
+# ---- imports, formats, constants ----
 
 import sys
 import numpy as np
@@ -36,7 +36,7 @@ from textwrap import dedent, indent
 ft = {'bool': lambda x: repr(x.astype('int32')),
       'float': '{: 0.1f}'.format}
 np.set_printoptions(edgeitems=10, linewidth=120, precision=2,
-                    suppress=True, threshold=100, 
+                    suppress=True, threshold=100,
                     formatter=ft)
 np.ma.masked_print_option.set_display('-')
 
@@ -50,7 +50,7 @@ __all__ = ['distances',
            '_n_near_demo',
            '_not_closer_demo'
            ]
-#---- functions ----
+# ---- functions ----
 
 def distances(a, b):
     """A fast implementation for distance calculations
@@ -64,8 +64,8 @@ def distances(a, b):
     if (len(a) != len(b)):
         print("\nInput array error...\n{}".format(distances.__doc__))
         return None
-    d0 = np.subtract.outer(a[:,0], b[:,0])
-    d1 = np.subtract.outer(a[:,1], b[:,1])
+    d0 = np.subtract.outer(a[:, 0], b[:, 0])
+    d1 = np.subtract.outer(a[:, 1], b[:, 1])
     return np.hypot(d0, d1)
 
 def not_closer(a, min_d=1, ordered=False):
@@ -154,11 +154,11 @@ def n_near(a, N=3, ordered=True):
     s0, s1, s2 = (1, (N+1)*2 + 1, len(dt_names))
     for i in range(0, s1):           # coordinate field names
         nm = dt_names[i+1]
-        n_array[nm] = coords[:,i]
+        n_array[nm] = coords[:, i]
     dist_names = dt_names[s1:s2]
     for i in range(N):               # fill n_array with the results
         nm = dist_names[i]
-        n_array[nm] = dist[:,i]
+        n_array[nm] = dist[:, i]
     return coords, dist, n_array
 
 
@@ -217,16 +217,15 @@ def _not_closer_demo():
     b, c, d = not_closer(a, ordered=False, min_d=20)
     idx = np.arange(len(a))
     e = np.c_[a, c, idx]
-    x_bin = np.arange(0,101,5)
+    x_bin = np.arange(0, 101, 5)
     y_bin = np.arange(0, 101, 5)    
     # 
-    h, hx, hy = np.histogram2d(e[:,1], e[:,0], bins=(x_bin, y_bin), weights=e[:,-2])
+    h, hx, hy = np.histogram2d(e[:, 1], e[:, 0], bins=(x_bin, y_bin), weights=e[:, -2])
     h = h.astype('int64')  # return the counts in the 10x10 cells
     return a, b, c, d, e, h
 # ---------------------------------------------------------------------
 if __name__ == "__main__":
     """Main section...   """
-    #print("Script... {}".format(script))
+#    print("Script... {}".format(script))
     a, coords, d, n_r = _n_near_demo()
-    #a, b, c, d, e, h = _not_closer_demo()
-
+#    a, b, c, d, e, h = _not_closer_demo()
