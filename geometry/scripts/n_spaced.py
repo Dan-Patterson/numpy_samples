@@ -22,7 +22,7 @@ from textwrap import dedent, indent
 ft = {'bool': lambda x: repr(x.astype('int32')),
       'float': '{: 0.1f}'.format}
 np.set_printoptions(edgeitems=10, linewidth=80, precision=2,
-                    suppress=True, threshold=100, 
+                    suppress=True, threshold=100,
                     formatter=ft)
 np.ma.masked_print_option.set_display('-')
 
@@ -117,5 +117,5 @@ if __name__=="__main__":
     a = np.array([[0, 0], [0, 2], [2, 2], [2, 0]], dtype='float64')
     b = _demo()
 
-#z = np.zeros((3,), dtype=[('A', 'int', (2,)), ('B', 'float')])
-#z["A"] = np.arange(6).reshape(3,2)
+#    z = np.zeros((3,), dtype=[('A', 'int', (2,)), ('B', 'float')])
+#    z["A"] = np.arange(6).reshape(3,2)
