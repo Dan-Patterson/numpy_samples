@@ -1,68 +1,35 @@
 # -*- coding: UTF-8 -*-
 """
-:Script:   vincenty.py
+:Script:   .py
 :Author:   Dan.Patterson@carleton.ca
-:Created:  2014-10
-:Modified: 2017-01-03
-:Purpose:
-:  Calculates the Vincenty Inverse distance solution for 2 long/lat pairs
-:Source:
-:  http://www.movable-type.co.uk/scripts/latlong-vincenty.html  java code
-: From:
-:  T Vincenty, 1975 "Direct and Inverse Solutions of Geodesics on the
-:  Ellipsoid with application of nested equations", Survey Review,
-:  vol XXIII, no 176, 1975
-:  http://www.ngs.noaa.gov/PUBS_LIB/inverse.pdf
+:Modified: 2017-xx-xx
+:Purpose:  tools for working with numpy arrays
+:Useage:
 :
-:Notes:
-:  atan2(y,x) or atan2(sin, cos) not like Excel
-:  used fmod(x,y) to get the modulous as per python
-:
-: *** link to haversine... see if vincenty can be vectorized in the same way
-:  http://stackoverflow.com/questions/34552284/vectorize-haversine-distance-
-:        computation-along-path-given-by-list-of-coordinates
-:
-:Returns:
-:  distance in meters, initial and final bearings (as an azimuth from N)
-:
-:Examples:
-: long0  lat0  long1  lat1   dist       initial    final  head to
-: -75.0, 45.0, -75.0, 46.0   111141.548   0.000,   0.000   N
-: -75.0, 46.0, -75.0, 45.0   111141.548 180.000, 180.000   S
-: -76.0, 45.0, -75.0, 45.0    78846.334  89.646,  90.353   E
-: -75.0, 45.0, -76.0, 45.0    78846.334 270.353, 269.646   W
-: -76.0, 46.0, -75.0, 45.0   135869.091 144.526, 145.239   SE
-: -75.0, 46.0, -76.0, 45.0   135869.091 215.473, 214.760   SW
-: -76.0, 45.0, -75.0, 46.0   135869.091  34.760,  35.473   NE
-: -75.0, 45.0, -76.0, 46.0   135869.091 325.239, 324.526   NW
-: -90.0,  0.0    0.0   0.0 10018754.171  90.000   90.000   1/4 equator
-: -75.0   0.0  -75.0  90.0 10001965.729   0.000    0.000   to N pole
+:References:
 :
 :---------------------------------------------------------------------:
 """
 # ---- imports, formats, constants ----
-
 import sys
-import numpy as np
 import math
-from textwrap import dedent, indent
+import numpy as np
+
 
 ft = {'bool': lambda x: repr(x.astype('int32')),
       'float': '{: 0.3f}'.format}
-np.set_printoptions(edgeitems=10, linewidth=80, precision=2,
-                    suppress=True, threshold=100,
-                    formatter=ft)
-np.ma.masked_print_option.set_display('-')
 
-script = sys.argv[0]
+np.set_printoptions(edgeitems=10, linewidth=80, precision=2, suppress=True,
+                    threshold=100, formatter=ft)
+np.ma.masked_print_option.set_display('-')  # change to a single -
 
-# ---- functions ----
+script = sys.argv[0]  # print this should you need to locate the script
 
 
-def getDistance(long0, lat0, long1, lat1):
+def geodesic(long0, lat0, long1, lat1, verbose=False):
     """return the distance on the ellipsoid between two points using
     :  Vincenty's Inverse method
-    : a, b - semi-major and minor axes
+    : a, b - semi-major and minor axes WGS84 model
     : f - inverse flattening
     : L, dL - delta longitude, initial and subsequent
     : u0, u1 - reduced latitude
@@ -75,7 +42,7 @@ def getDistance(long0, lat0, long1, lat1):
     f = 1.0/298.257223563
     twoPI = 2*math.pi
     dL = L = math.radians(long1 - long0)
-    u0 = math.atan((1 - f) * math.tan(math.radians(lat0)))
+    u0 = math.atan((1 - f) * math.tan(math.radians(lat0)))  # reduced latitudes
     u1 = math.atan((1 - f) * math.tan(math.radians(lat1)))
     s_u0 = math.sin(u0)
     c_u0 = math.cos(u0)
@@ -88,9 +55,10 @@ def getDistance(long0, lat0, long1, lat1):
     ss_01 = s_u0*s_u1
     #
     lambdaP = float()
-    iterLimit = 100
+    max_iter = 20
     # first approximation
-    while (iterLimit > 0):
+    cnt = 0
+    while (cnt < max_iter):
         s_dL = math.sin(dL)
         c_dL = math.cos(dL)
         s_sig = math.sqrt((c_u1*s_dL)**2 + (cs_01 - sc_01*c_dL)**2)  # eq14
@@ -111,84 +79,42 @@ def getDistance(long0, lat0, long1, lat1):
                                     C*s_sig*(c_sigM2 +
                                              C*c_sig*(-1.0 + 2*c_sigM2**2)))
         #
-        if (iterLimit == 0):          # is it time to bail?
+        if (cnt == max_iter):          # is it time to bail?
             return 0.0
-        elif((math.fabs(dL - lambdaP) > 1.0e-12) and (iterLimit > 0)):
-            iterLimit = iterLimit - 1
+        elif((math.fabs(dL - lambdaP) > 1.0e-12) and (cnt < max_iter)):
+            cnt += 1
         else:
             break
     # ---- end of while ----
     uSq = c_alpha2 * ab_b
     A = 1 + uSq/16384.0 * (4096 + uSq*(-768 + uSq*(320 - 175*uSq)))  # eq 3
-    B = uSq/1024.0 * (256 +  uSq*(-128 + uSq*(74 - 47*uSq)))         # eq 4
-    d_sigma = B*s_sig*(c_sigM2 + 
-                      (B/4.0)*(c_sig*(-1 + 2*c_sigM2**2) -
-                      (B/6.0)*c_sigM2*(-3 + 4*s_sig**2)*(-3 +
-                      4*c_sigM2**2)))
+    B = uSq/1024.0 * (256 + uSq*(-128 + uSq*(74 - 47*uSq)))          # eq 4
+    d_sigma = B*s_sig*(c_sigM2 +
+                       (B/4.0)*(c_sig*(-1 + 2*c_sigM2**2) -
+                        (B/6.0)*c_sigM2*(-3 + 4*s_sig**2)*(-3 + 4*c_sigM2**2)))
     # d_sigma => eq 6
     dist = b*A*(sigma - d_sigma)                                     # eq 19
-    alpha1 = math.atan2(c_u1*s_dL,  cs_01 - sc_01*c_dL)
+    alpha1 = math.atan2(c_u1*s_dL, cs_01 - sc_01*c_dL)
     alpha2 = math.atan2(c_u0*s_dL, -sc_01 + cs_01*c_dL)
     # normalize to 0...360  degrees
     alpha1 = math.degrees(math.fmod((alpha1 + twoPI), twoPI))        # eq 20
     alpha2 = math.degrees(math.fmod((alpha2 + twoPI), twoPI))        # eq 21
-    return dist, alpha1, alpha2
+    if verbose:
+        return dist, alpha1, alpha2, cnt
+    return dist, alpha1, alpha2, None
 
 
-def demo():
-    """ testing function edit as appropriate """
-    coord = [-76.0, 46.0, -75.0, 45.0]  # SE
-    #coord = [-90.0, 0.0, 0, 0.0]       # 1/4 equator
-    #coord = [-75.0, 0.0, -75.0, 90.0]  # to N pole
-    a0, a1, a2, a3 = coord
-    b0, b1, b2 = getDistance(a0, a1, a2, a3)
-    frmt = """
-    :--------------------------------------------------------:
-    :Vincenty inverse...
-    :Longitude, Latitude
-    :From: ({:>12.8f}, {:>12.8f})
-    :To:   ({:>12.8f}, {:>12.8f})
-    :Distance: {:>10.3f} m
-    :Bearings...
-    :  Initial {:>8.2f} deg
-    :  Final   {:>8.2f} deg
-    :--------------------------------------------------------:
+def _demo():
     """
-    print (dedent(frmt).format(a0, a1, a2, a3, b0, b1, b2))
-
-
-def vin():
-    """ """
-    #    long0, lat0, long1, lat1
-    vals = [[90.0,  0.0,  0.0,  0.0],
-            [0.0,  0.0, 0.0, 90.0],
-            [-75.0, 45.0, -75.0, 46.0]]
-    v = np.array(vals)
-    #
-    a = 6378137.0
-    b = 6356752.314245
-    f = 1.0/298.257223563
-    twoPI = 2*math.pi
-    #
-    long0 = v[:, 2]
-    long1 = v[:, 0]
-    lat0 = v[:, 1]
-    lat1 = v[:, 3]
-    dL = L = np.radians(long1 - long0)
-    u0 = np.arctan((1 - f) * np.tan(np.radians(lat0)))
-    u1 = np.arctan((1 - f) * np.tan(np.radians(lat1)))
-    s_u0 = np.sin(u0)
-    c_u0 = np.cos(u0)
-    s_u1 = np.sin(u1)
-    c_u1 = np.cos(u1)
-    return long0
-# ---------------------------------------------------------------------
+    : -
+    """
+    pass
+# ----------------------------------------------------------------------
+# __main__ .... code section
 if __name__ == "__main__":
-    """Main section...   """
-    #print("Script... {}".format(script))
-    # ----- uncomment one of the  below  -------------------
-    #long0 = vin()
-
-
-
-
+    """Optionally...
+    : - print the script source name.
+    : - run the _demo
+    """
+#    print("Script... {}".format(script))
+    _demo()
