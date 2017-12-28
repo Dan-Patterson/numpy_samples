@@ -31,6 +31,15 @@
 :  https://gist.github.com/CMCDragonkai/6444bf7ea41b4f43766abb9f4294cd69
 :  https://raw.githubusercontent.com/buckinha/DiamondSquare/master
 :        /DiamondSquare.py
+:  *** http://paulbourke.net/fractals/noise/
+:  *** https://en.m.wikipedia.org/wiki/Diamond-square_algorithm
+:       https://github.com/buckinha/DiamondSquare
+:       https://github.com/Crowgers/Diamond_Square
+:       https://github.com/elite174/TextureGen
+:     - https://joecrossdevelopment.wordpress.com/2012/04/30/
+:       2d-random-terrain-iterative-diamond-square-algorithm/
+:     - https://scipython.com/blog/cloud-images-using-the-diamond-square-
+:       algorithm/
 :**http://www-cs-students.stanford.edu/~amitp/
 :       game-programming/polygon-map-generation/
 :---------------------------------------------------------------------:

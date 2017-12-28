@@ -18,51 +18,60 @@ Notes:
 """
 import numpy as np
 from numpy.lib.stride_tricks import as_strided
-np.set_printoptions(edgeitems=3,linewidth=80,precision=2,
-                    suppress=True,threshold=50)
 from textwrap import dedent
 import arcpy
 
+np.set_printoptions(edgeitems=3, linewidth=80, precision=2,
+                    suppress=True, threshold=200)
+
 arcpy.env.overwriteOutput = True
 
-def block_a(a, block=(3,3)):
+
+def block_a(a, block=(3, 3)):
     """Provide a 2D block view of a 2D array. No error checking made. Columns
     and rows outside of the block are truncated.
     """
     a = np.ascontiguousarray(a)
     r, c = block
-    shape = (a.shape[0]/r, a.shape[1]/c) + block
+    shape = (a.shape[0]//r, a.shape[1]//c) + block
     strides = (r*a.strides[0], c*a.strides[1]) + a.strides
     b_a = as_strided(a, shape=shape, strides=strides)
     return b_a
 
+
 def agg_demo(n):
     """Run the demo with a preset array shape and content.  See the header
     """
-    a = np.random.random_integers(0,high=5,size=n*n).reshape((n,n))
-    rast = arcpy.NumPyArrayToRaster(a,x_cell_size=10)
-    agg_rast = arcpy.sa.Aggregate(rast,2,"MAXIMUM")
-    agg_arr = arcpy.RasterToNumPyArray(agg_rast) #,arcpy.Point(300000,5025000),10)
+    a = np.random.randint(0, high=5, size=n*n).reshape((n, n))
+    rast = arcpy.NumPyArrayToRaster(a, x_cell_size=10)
+    agg_rast = arcpy.sa.Aggregate(rast, 2, "MAXIMUM")
+    agg_arr = arcpy.RasterToNumPyArray(agg_rast)
+    # ,arcpy.Point(300000,5025000),10)
     # --- a_s is the strided array, a_agg_max is the strided array max
-    a_s  = block_a(a, block=(2,2))
-    a_agg_max = a_s.max(axis=(2,3))
+    a_s = block_a(a, block=(2, 2))
+    a_agg_max = a_s.max(axis=(2, 3))
     # ---
-    frmt = "\nInput array..\n{}\n\n" \
-           "Arcpy.sa aggregate..\n{}\n\n" \
-           "Numpy aggregate..\n{}\n\n" \
-           "All close? {}"
-    yup = np.allclose(agg_arr,a_agg_max)
-    print(dedent(frmt).format(a, agg_arr, a_agg_max, yup))
+    frmt = """
+    Input array... shape {} rows/cols
+    {}\n
+    Arcpy.sa aggregate..
+    {}\n
+    Numpy aggregate..
+    {}\n
+    All close? {}
+    """
+    yup = np.allclose(agg_arr, a_agg_max)
+    print(dedent(frmt).format(a.shape, a, agg_arr, a_agg_max, yup))
     return a, agg_arr, a_s, a_agg_max
 
-    
-if __name__=="__main__":
+
+if __name__ == "__main__":
     """ Returns the input array, it's aggregation raster from arcpy.sa,
     the raster representation of the raster and the block representation
     and the aggregation array.
     """
-    n=5000
-    a, agg_arr, a_s, a_agg_max = agg_demo(n)
+    n = 5000
+#    a, agg_arr, a_s, a_agg_max = agg_demo(n)
 
 
 
