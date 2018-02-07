@@ -1,4 +1,7 @@
 **Raster array scripts**
+------------------------
+
+Not in any particular order... except diamond-square is just plain fun.
 
 diamond_square.py
 -----------------
@@ -11,5 +14,6 @@ functions to calculate slope, aspect and hillshade.  I will try to find the rest
 rasters.py
 ----------
 Mostly functions to work with 3D stacks... aka, rasters for a location, and depth representing time.  Statistical functions for both masked (or arrays with nan) and non-masked arrays.  Plus a few others for stacking, reclassing.  I should reallyu make a table of contents ;)
+
 
 
