@@ -8,4 +8,8 @@ surface.py
 ----------
 functions to calculate slope, aspect and hillshade.  I will try to find the rest of the options, but D8 is implemented ... just have to find the other options.
 
+rasters.py
+----------
+Mostly functions to work with 3D stacks... aka, rasters for a location, and depth representing time.  Statistical functions for both masked (or arrays with nan) and non-masked arrays.  Plus a few others for stacking, reclassing.  I should reallyu make a table of contents ;)
+
 
